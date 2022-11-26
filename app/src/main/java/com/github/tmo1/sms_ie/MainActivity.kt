@@ -21,6 +21,7 @@
 package com.github.tmo1.sms_ie
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.app.NotificationChannel
@@ -33,7 +34,10 @@ import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.provider.Telephony
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyManager
 import android.text.format.DateUtils.formatElapsedTime
+import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -59,6 +63,7 @@ const val EXPORT_CALL_LOG = 3
 const val IMPORT_CALL_LOG = 4
 const val EXPORT_CONTACTS = 5
 const val IMPORT_CONTACTS = 6
+const val EXPORT_ALL = 7
 const val PERMISSIONS_REQUEST = 1
 const val LOG_TAG = "MYLOG"
 const val CHANNEL_ID = "MYCHANNEL"
@@ -103,6 +108,8 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
 
         // get necessary permissions on startup
         val allPermissions = listOf(
+//            Manifest.permission.READ_PHONE_NUMBERS,
+            Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.READ_SMS,
             Manifest.permission.READ_CONTACTS,
             Manifest.permission.WRITE_CONTACTS,
@@ -132,6 +139,7 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         val wipeAllMessagesButton: Button = findViewById(R.id.wipe_all_messages_button)
         val exportContactsButton: Button = findViewById(R.id.export_contacts_button)
         val importContactsButton: Button = findViewById(R.id.import_contacts_button)
+        val exportAllButton: Button = findViewById(R.id.export_all_button)
         exportMessagesButton.setOnClickListener { exportMessagesManual() }
         importMessagesButton.setOnClickListener { importMessagesManual() }
         exportCallLogButton.setOnClickListener { exportCallLogManual() }
@@ -139,6 +147,7 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         exportContactsButton.setOnClickListener { exportContactsManual() }
         importContactsButton.setOnClickListener { importContactsManual() }
         wipeAllMessagesButton.setOnClickListener { wipeMessagesManual() }
+        exportAllButton.setOnClickListener { exportAllItems() }
         //actionBar?.setDisplayHomeAsUpEnabled(true)
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
@@ -289,6 +298,19 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private fun exportAllItems() {
+        val date = getCurrentDateTime()
+        val dateInString = date.toString("yyyy-MM-dd")
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, "allItems-$dateInString.json")
+        }
+
+        startActivityForResult(intent, EXPORT_ALL)
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(
         requestCode: Int, resultCode: Int, resultData: Intent?
@@ -415,6 +437,26 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
                     statusReportText.text = getString(
                         R.string.import_contacts_results,
                         contactsImported,
+                        formatElapsedTime(
+                            TimeUnit.SECONDS.convert(
+                                System.nanoTime() - startTime,
+                                TimeUnit.NANOSECONDS
+                            )
+                        )
+                    )
+                }
+            }
+        }
+
+        if (requestCode == EXPORT_ALL && resultCode == Activity.RESULT_OK) {
+            resultData?.data?.let {
+                CoroutineScope(Dispatchers.Main).launch {
+                    val allDataExported =
+                        exportAllData(applicationContext, it, progressBar, statusReportText)
+
+                    statusReportText.text = getString(
+                        R.string.export_all_results,
+                        allDataExported,
                         formatElapsedTime(
                             TimeUnit.SECONDS.convert(
                                 System.nanoTime() - startTime,

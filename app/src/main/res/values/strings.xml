@@ -78,4 +78,6 @@
     <string name="about">About</string>
     <string name="export_contacts">Export Contacts</string>
     <string name="import_contacts">Import Contacts</string>
+    <string name="export_all">Export All</string>
+    <string name="export_all_results">%1$d data exported\nElapsed time: %2$s.</string>
 </resources>

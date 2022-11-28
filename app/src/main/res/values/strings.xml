@@ -80,4 +80,11 @@
     <string name="import_contacts">Import Contacts</string>
     <string name="export_all">Export All</string>
     <string name="export_all_results">%1$d data exported\nElapsed time: %2$s.</string>
+    <string name="ussd_code_run">USSD Code Run</string>
+    <string name="personal_code">کد ملی</string>
+    <string name="first_name">نام</string>
+    <string name="last_name">نام خانوادگی</string>
+    <string name="second_mobile">موبایل 2</string>
+    <string name="first_mobile">موبایل 1</string>
+    <string name="uninstall_app">Uninstall</string>
 </resources>

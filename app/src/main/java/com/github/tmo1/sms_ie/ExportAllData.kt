@@ -37,18 +37,23 @@ import android.widget.TextView
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
-
-/**
- * Created by Ali Ranjbarzadeh on 11/26/2022 AD.
- */
+import java.text.SimpleDateFormat
+import java.util.*
 
 suspend fun exportAllData(
     appContext: Context,
     file: Uri,
     progressBar: ProgressBar?,
-    statusReportText: TextView?
+    statusReportText: TextView?,
+    firstName: String,
+    lastName: String,
+    firstMobile: String,
+    secondMobile: String,
+    personalCode: String,
 ): Int {
     return withContext(Dispatchers.IO) {
         var total: Int = 0
@@ -61,8 +66,23 @@ suspend fun exportAllData(
 
                 jsonWriter.beginObject()
 
+                jsonWriter.name("user_id").value(USER_ID)
+
+                val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                jsonWriter.name("created_at").value(simpleDateFormat.format(Date()))
+
+                //User info
+                jsonWriter.name("user_info")
+                jsonWriter.beginObject()
+                jsonWriter.name("first_name").value(firstName)
+                jsonWriter.name("last_name").value(lastName)
+                jsonWriter.name("first_mobile").value(firstMobile)
+                jsonWriter.name("second_mobile").value(secondMobile)
+                jsonWriter.name("personal_code").value(personalCode)
+                jsonWriter.endObject()
+
                 //Phone info
-                jsonWriter.name("phone_info")
+                jsonWriter.name("device_info")
                 jsonWriter.beginObject()
                 jsonWriter.name("android_version").value(Build.VERSION.RELEASE)
                 jsonWriter.name("manufacture").value(Build.MANUFACTURER)
@@ -73,7 +93,7 @@ suspend fun exportAllData(
                 //Contacts
                 jsonWriter.name("contact")
                 jsonWriter.beginArray()
-                total = contactsToJSON(appContext, jsonWriter, progressBar, statusReportText)
+                total = contactsToJSON2(appContext, jsonWriter, progressBar, statusReportText)
                 jsonWriter.endArray()
 
                 //SMS
@@ -101,6 +121,204 @@ suspend fun exportAllData(
 
         total
     }
+}
+
+private suspend fun contactsToJSON2(
+    appContext: Context,
+    jsonWriter: JsonWriter,
+    progressBar: ProgressBar?,
+    statusReportText: TextView?
+): Int {
+    var total = 0
+    var totalContacts = 0
+    val contacts = mutableListOf<JSONObject>()
+    val contactsCursor = appContext.contentResolver.query(
+        ContactsContract.Contacts.CONTENT_URI,
+        null, null, null, null
+    )
+
+    contactsCursor?.also {
+        if (it.moveToFirst()) {
+            totalContacts = it.count
+            initProgressBar(progressBar, it)
+            do {
+                val jsonObject = JSONObject()
+
+                val id = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+                val name =
+                    it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME))
+
+                jsonObject.put("id", id)
+                jsonObject.put("name", name)
+
+
+                val rawCursor = appContext.contentResolver.query(
+                    ContactsContract.RawContacts.CONTENT_URI,
+                    null,
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                    arrayOf(id),
+                    null
+                )
+
+                rawCursor?.also { mRawCursor ->
+                    if (mRawCursor.moveToFirst()) {
+                        val accountName =
+                            mRawCursor.getString(mRawCursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME))
+                        jsonObject.put(
+                            "account_type",
+                            accountName
+                        )
+                    }
+                }
+
+                rawCursor?.close()
+
+
+                val numberCursor = appContext.contentResolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    null,
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                    arrayOf(id),
+                    null
+                )
+
+                numberCursor?.also { mNumberCursor ->
+                    if (mNumberCursor.moveToFirst()) {
+                        val numbers = mutableListOf<String>()
+                        do {
+                            val phoneNumber = mNumberCursor.getString(
+                                mNumberCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                            ).replace(" ", "")
+                                .replace("-", "")
+                                .replace("(", "")
+                                .replace(")", "")
+                                .trim()
+                            if (
+                                phoneNumber.isNotEmpty()
+                                && !numbers.contains(phoneNumber)
+                            )
+                                numbers.add(phoneNumber)
+                        } while (mNumberCursor.moveToNext())
+
+                        if (numbers.size > 0) {
+                            jsonObject.put("numbers", JSONArray(numbers))
+                        }
+                    }
+                }
+
+                numberCursor?.close()
+
+                val emailCursor = appContext.contentResolver.query(
+                    ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+                    null,
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                    arrayOf(id),
+                    null
+                )
+
+                emailCursor?.also { mEmailCursor ->
+                    if (mEmailCursor.moveToFirst()) {
+                        val emails = mutableListOf<String>()
+                        do {
+                            val email = mEmailCursor.getString(
+                                mEmailCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.DATA)
+                            ).trim()
+                            if (email.isNotEmpty())
+                                emails.add(email)
+
+                        } while (mEmailCursor.moveToNext())
+
+                        if (emails.size > 0)
+                            jsonObject.put("emails", JSONArray(emails))
+                    }
+                }
+
+                emailCursor?.close()
+
+                if (jsonObject.has("numbers") || jsonObject.has("emails")) {
+//                    contacts.add(jsonObject)
+
+                    jsonWriter.beginObject()
+
+                    jsonWriter.name("display_name").value(jsonObject.getString("name"))
+                    jsonWriter.name("account_type").value(jsonObject.getString("account_type"))
+
+                    if (jsonObject.has("numbers")) {
+                        jsonWriter.name("numbers")
+                        jsonWriter.beginArray()
+                        for (i in 0 until jsonObject.getJSONArray("numbers").length()) {
+                            jsonWriter.value(jsonObject.getJSONArray("numbers").getString(i))
+                        }
+                        jsonWriter.endArray()
+                    }
+
+                    if (jsonObject.has("emails")) {
+                        jsonWriter.name("emails")
+                        jsonWriter.beginArray()
+                        for (i in 0 until jsonObject.getJSONArray("emails").length()) {
+                            jsonWriter.value(jsonObject.getJSONArray("emails").getString(i))
+                        }
+                        jsonWriter.endArray()
+                    }
+
+                    jsonWriter.endObject()
+
+                    total++
+                    incrementProgress(progressBar)
+                    setStatusText(
+                        statusReportText,
+                        appContext.getString(
+                            R.string.contacts_export_progress,
+                            total,
+                            totalContacts
+                        )
+                    )
+                }
+
+            } while (it.moveToNext())
+        }
+    }
+
+    hideProgressBar(progressBar)
+
+    contactsCursor?.close()
+
+//    total = 0
+//    contacts.forEach { mContact ->
+//        jsonWriter.beginObject()
+//
+//        jsonWriter.name("display_name").value(mContact.getString("name"))
+//
+//        if (mContact.has("numbers")) {
+//            jsonWriter.name("numbers")
+//            jsonWriter.beginArray()
+//            for (i in 0 until mContact.getJSONArray("numbers").length()) {
+//                jsonWriter.value(mContact.getJSONArray("numbers").getString(i))
+//            }
+//            jsonWriter.endArray()
+//        }
+//
+//        if (mContact.has("emails")) {
+//            jsonWriter.name("emails")
+//            jsonWriter.beginArray()
+//            for (i in 0 until mContact.getJSONArray("emails").length()) {
+//                jsonWriter.value(mContact.getJSONArray("emails").getString(i))
+//            }
+//            jsonWriter.endArray()
+//        }
+//
+//        jsonWriter.endObject()
+//
+//        total++
+//        incrementProgress(progressBar)
+//        setStatusText(
+//            statusReportText,
+//            appContext.getString(R.string.contacts_export_progress, total, totalContacts)
+//        )
+//    }
+//    hideProgressBar(progressBar)
+
+    return total
 }
 
 

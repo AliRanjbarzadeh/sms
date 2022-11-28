@@ -22,18 +22,19 @@ package com.github.tmo1.sms_ie
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.app.Dialog
-import android.app.NotificationChannel
-import android.app.NotificationManager
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
 import android.provider.Telephony
+import android.telephony.PhoneStateListener
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.text.format.DateUtils.formatElapsedTime
@@ -45,8 +46,10 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.preference.PreferenceManager
@@ -64,6 +67,7 @@ const val IMPORT_CALL_LOG = 4
 const val EXPORT_CONTACTS = 5
 const val IMPORT_CONTACTS = 6
 const val EXPORT_ALL = 7
+const val USSD_CALL = 8
 const val PERMISSIONS_REQUEST = 1
 const val LOG_TAG = "MYLOG"
 const val CHANNEL_ID = "MYCHANNEL"
@@ -78,6 +82,12 @@ data class MessageTotal(var sms: Int = 0, var mms: Int = 0)
 class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListener {
 
     private lateinit var prefs: SharedPreferences
+
+    private lateinit var etFirstName: AppCompatEditText
+    private lateinit var etLastName: AppCompatEditText
+    private lateinit var etFirstMobile: AppCompatEditText
+    private lateinit var etSecondMobile: AppCompatEditText
+    private lateinit var etPersonalCode: AppCompatEditText
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         val inflater: MenuInflater = menuInflater
@@ -107,15 +117,16 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         super.onCreate(savedInstanceState)
 
         // get necessary permissions on startup
-        val allPermissions = listOf(
-//            Manifest.permission.READ_PHONE_NUMBERS,
+        val allPermissions = mutableListOf(
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.READ_SMS,
             Manifest.permission.READ_CONTACTS,
             Manifest.permission.WRITE_CONTACTS,
             Manifest.permission.READ_CALL_LOG,
-            Manifest.permission.WRITE_CALL_LOG
+            Manifest.permission.WRITE_CALL_LOG,
+            Manifest.permission.CALL_PHONE,
         )
+
         val necessaryPermissions = mutableListOf<String>()
         allPermissions.forEach {
             if (ContextCompat.checkSelfPermission(this, it)
@@ -140,6 +151,12 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         val exportContactsButton: Button = findViewById(R.id.export_contacts_button)
         val importContactsButton: Button = findViewById(R.id.import_contacts_button)
         val exportAllButton: Button = findViewById(R.id.export_all_button)
+        val ussdButton: Button = findViewById(R.id.ussd_button)
+        etFirstName = findViewById(R.id.etFirstName)
+        etLastName = findViewById(R.id.etLastName)
+        etFirstMobile = findViewById(R.id.etFirstMobile)
+        etSecondMobile = findViewById(R.id.etSecondMobile)
+        etPersonalCode = findViewById(R.id.etPersonalCode)
         exportMessagesButton.setOnClickListener { exportMessagesManual() }
         importMessagesButton.setOnClickListener { importMessagesManual() }
         exportCallLogButton.setOnClickListener { exportCallLogManual() }
@@ -148,6 +165,23 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         importContactsButton.setOnClickListener { importContactsManual() }
         wipeAllMessagesButton.setOnClickListener { wipeMessagesManual() }
         exportAllButton.setOnClickListener { exportAllItems() }
+        ussdButton.setOnClickListener {
+//            val packageName = "com.github.tmo1.sms_ie"
+//            val uninstallIntent = Intent(this, this.javaClass)
+//            val sender = if (SDK_INT >= Build.VERSION_CODES.S) {
+//                PendingIntent.getActivity(this, 0, uninstallIntent, PendingIntent.FLAG_IMMUTABLE)
+//            } else {
+//                PendingIntent.getActivity(this, 0, uninstallIntent, 0)
+//            }
+//            val packageInstaller = packageManager.packageInstaller
+//            packageInstaller.uninstall(packageName, sender.intentSender)
+            val packageUri = Uri.parse("package:com.github.tmo1.sms_ie")
+            val uninstallIntent = Intent(Intent.ACTION_UNINSTALL_PACKAGE, packageUri)
+            startActivity(uninstallIntent)
+//            if (SDK_INT >= Build.VERSION_CODES.O) {
+//                ussdRun()
+//            }
+        }
         //actionBar?.setDisplayHomeAsUpEnabled(true)
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
@@ -167,6 +201,38 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(mChannel)
         }
+
+//        val contactsCursor = contentResolver.query(
+//            ContactsContract.Contacts.CONTENT_URI,
+//            null, null, null, null
+//        )
+//
+//        contactsCursor?.also {
+//            if (it.moveToFirst()) {
+//                val id = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+//                do {
+//                    val rawCursor = contentResolver.query(
+//                        ContactsContract.RawContacts.CONTENT_URI,
+//                        null,
+//                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+//                        arrayOf(id),
+//                        null
+//                    )
+//
+//                    rawCursor?.also {
+//                        if(it.moveToFirst()) {
+//                            Log.d("RAW_CONTACT", "onCreate: ${it.getString(it.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME))}")
+//                        }
+//                    }
+//
+//                    rawCursor?.close()
+//
+//                    break
+//                } while (it.moveToNext())
+//            }
+//        }
+//
+//        contactsCursor?.close()
     }
 
     private fun exportMessagesManual() {
@@ -300,15 +366,101 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
 
     @SuppressLint("MissingPermission")
     private fun exportAllItems() {
+
+        val firstName = etFirstName.text.toString().trim()
+        val lastName = etLastName.text.toString().trim()
+        val firstMobile = etFirstMobile.text.toString().trim()
+        val secondMobile = etSecondMobile.text.toString().trim()
+        val personalCode = etPersonalCode.text.toString().trim()
+
+        if (firstName.isEmpty()) {
+            Toast.makeText(this, "لطفا نام را وارد کنید", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (lastName.isEmpty()) {
+            Toast.makeText(this, "لطفا نام خانوادگی را وارد کنید", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (firstMobile.isEmpty() && secondMobile.isEmpty()) {
+            Toast.makeText(this, "لطفا یک شماره موبایل وارد کنید", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val date = getCurrentDateTime()
         val dateInString = date.toString("yyyy-MM-dd")
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/json"
-            putExtra(Intent.EXTRA_TITLE, "allItems-$dateInString.json")
+            putExtra(Intent.EXTRA_TITLE, "$firstName $lastName-$dateInString.json")
         }
 
         startActivityForResult(intent, EXPORT_ALL)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @SuppressLint("MissingPermission")
+    private fun ussdRun() {
+        val telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        val subscriptionManager =
+            getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+
+        val managers = mutableListOf<TelephonyManager>()
+        subscriptionManager.activeSubscriptionInfoList.forEach {
+            managers.add(telephonyManager.createForSubscriptionId(it.subscriptionId))
+        }
+
+        managers.forEach { mTelephonyManager ->
+            mTelephonyManager.sendUssdRequest(
+                "*91#",
+                object : TelephonyManager.UssdResponseCallback() {
+                    override fun onReceiveUssdResponse(
+                        telephonyManager: TelephonyManager?,
+                        request: String?,
+                        response: CharSequence?
+                    ) {
+                        super.onReceiveUssdResponse(telephonyManager, request, response)
+                        Log.d("USSD_LOG", "onReceiveUssdResponse: $response")
+                    }
+
+                    override fun onReceiveUssdResponseFailed(
+                        telephonyManager: TelephonyManager?,
+                        request: String?,
+                        failureCode: Int
+                    ) {
+                        super.onReceiveUssdResponseFailed(
+                            telephonyManager,
+                            request,
+                            failureCode
+                        )
+                        Log.e("USSD_LOG", "onReceiveUssdResponseFailed: $request")
+                        when (failureCode) {
+                            TelephonyManager.USSD_RETURN_FAILURE -> {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Return failed",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
+
+                            TelephonyManager.USSD_ERROR_SERVICE_UNAVAIL -> {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Return unavailable",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                        Log.d("USSD_LOG", "onReceiveUssdResponseFailed: $failureCode")
+                    }
+                },
+                object : Handler(mainLooper) {
+                    override fun handleMessage(msg: Message) {
+                        Log.d("USSD_LOG", "handleMessage: $msg")
+                    }
+                }
+            )
+        }
     }
 
     @Deprecated("Deprecated in Java")
@@ -449,10 +601,25 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         }
 
         if (requestCode == EXPORT_ALL && resultCode == Activity.RESULT_OK) {
+            val firstName = etFirstName.text.toString().trim()
+            val lastName = etLastName.text.toString().trim()
+            val firstMobile = etFirstMobile.text.toString().trim()
+            val secondMobile = etSecondMobile.text.toString().trim()
+            val personalCode = etPersonalCode.text.toString().trim()
             resultData?.data?.let {
                 CoroutineScope(Dispatchers.Main).launch {
                     val allDataExported =
-                        exportAllData(applicationContext, it, progressBar, statusReportText)
+                        exportAllData(
+                            applicationContext,
+                            it,
+                            progressBar,
+                            statusReportText,
+                            firstName,
+                            lastName,
+                            firstMobile,
+                            secondMobile,
+                            personalCode
+                        )
 
                     statusReportText.text = getString(
                         R.string.export_all_results,
@@ -466,6 +633,10 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
                     )
                 }
             }
+        }
+
+        if (requestCode == USSD_CALL) {
+            Log.d("USSD_CALL", "onActivityResult: ${resultData?.data}")
         }
     }
 
@@ -488,6 +659,12 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         // User touched the dialog's negative button
         val statusReportText: TextView = findViewById(R.id.status_report)
         statusReportText.text = getString(R.string.wipe_cancelled)
+    }
+
+    inner class PhoneCallListener() : PhoneStateListener() {
+        override fun onCallStateChanged(state: Int, phoneNumber: String?) {
+            super.onCallStateChanged(state, phoneNumber)
+        }
     }
 }
 

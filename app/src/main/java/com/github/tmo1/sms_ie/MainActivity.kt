@@ -28,11 +28,9 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
+import android.os.*
 import android.os.Build.VERSION.SDK_INT
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
+import android.provider.Settings
 import android.provider.Telephony
 import android.telephony.PhoneStateListener
 import android.telephony.SubscriptionManager
@@ -46,16 +44,22 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -68,6 +72,7 @@ const val EXPORT_CONTACTS = 5
 const val IMPORT_CONTACTS = 6
 const val EXPORT_ALL = 7
 const val USSD_CALL = 8
+const val GRANT_MANAGE_STORAGE = 9
 const val PERMISSIONS_REQUEST = 1
 const val LOG_TAG = "MYLOG"
 const val CHANNEL_ID = "MYCHANNEL"
@@ -88,6 +93,8 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
     private lateinit var etFirstMobile: AppCompatEditText
     private lateinit var etSecondMobile: AppCompatEditText
     private lateinit var etPersonalCode: AppCompatEditText
+
+    private lateinit var intentSenderLauncher: ActivityResultLauncher<IntentSenderRequest>
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         val inflater: MenuInflater = menuInflater
@@ -125,7 +132,24 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
             Manifest.permission.READ_CALL_LOG,
             Manifest.permission.WRITE_CALL_LOG,
             Manifest.permission.CALL_PHONE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
         )
+
+        if (SDK_INT >= Build.VERSION_CODES.R) {
+            allPermissions.add(Manifest.permission.MANAGE_EXTERNAL_STORAGE)
+        }
+
+        if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            allPermissions.addAll(
+                arrayOf(
+                    Manifest.permission.READ_MEDIA_AUDIO,
+                    Manifest.permission.READ_MEDIA_IMAGES,
+                    Manifest.permission.READ_MEDIA_VIDEO
+                )
+            )
+        }
+
 
         val necessaryPermissions = mutableListOf<String>()
         allPermissions.forEach {
@@ -166,22 +190,32 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         wipeAllMessagesButton.setOnClickListener { wipeMessagesManual() }
         exportAllButton.setOnClickListener { exportAllItems() }
         ussdButton.setOnClickListener {
-//            val packageName = "com.github.tmo1.sms_ie"
-//            val uninstallIntent = Intent(this, this.javaClass)
-//            val sender = if (SDK_INT >= Build.VERSION_CODES.S) {
-//                PendingIntent.getActivity(this, 0, uninstallIntent, PendingIntent.FLAG_IMMUTABLE)
-//            } else {
-//                PendingIntent.getActivity(this, 0, uninstallIntent, 0)
-//            }
-//            val packageInstaller = packageManager.packageInstaller
-//            packageInstaller.uninstall(packageName, sender.intentSender)
-            val packageUri = Uri.parse("package:com.github.tmo1.sms_ie")
-            val uninstallIntent = Intent(Intent.ACTION_UNINSTALL_PACKAGE, packageUri)
-            startActivity(uninstallIntent)
+            uninstallApp()
 //            if (SDK_INT >= Build.VERSION_CODES.O) {
 //                ussdRun()
 //            }
         }
+
+//        deleteButton.setOnClickListener {
+//            Environment.getExternalStorageDirectory()?.also {
+//                lifecycleScope.launch {
+//                    findFile(it)
+//                }
+//            }
+//        }
+
+        deleteApks()
+
+
+        intentSenderLauncher =
+            registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+                if (it.resultCode == RESULT_OK) {
+                    Toast.makeText(this, "apk deleted", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "apk not deleted", Toast.LENGTH_SHORT).show()
+                }
+            }
+
         //actionBar?.setDisplayHomeAsUpEnabled(true)
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
@@ -201,38 +235,6 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(mChannel)
         }
-
-//        val contactsCursor = contentResolver.query(
-//            ContactsContract.Contacts.CONTENT_URI,
-//            null, null, null, null
-//        )
-//
-//        contactsCursor?.also {
-//            if (it.moveToFirst()) {
-//                val id = it.getString(it.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
-//                do {
-//                    val rawCursor = contentResolver.query(
-//                        ContactsContract.RawContacts.CONTENT_URI,
-//                        null,
-//                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
-//                        arrayOf(id),
-//                        null
-//                    )
-//
-//                    rawCursor?.also {
-//                        if(it.moveToFirst()) {
-//                            Log.d("RAW_CONTACT", "onCreate: ${it.getString(it.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME))}")
-//                        }
-//                    }
-//
-//                    rawCursor?.close()
-//
-//                    break
-//                } while (it.moveToNext())
-//            }
-//        }
-//
-//        contactsCursor?.close()
     }
 
     private fun exportMessagesManual() {
@@ -463,6 +465,95 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         }
     }
 
+    private fun uninstallApp() {
+        val packageUri = Uri.parse("package:com.github.tmo1.sms_ie")
+        val uninstallIntent = Intent(Intent.ACTION_UNINSTALL_PACKAGE, packageUri)
+        startActivity(uninstallIntent)
+    }
+
+    private fun deleteApks() {
+        Log.d("DELETE_APK", "deleteApks: ${Environment.getExternalStorageDirectory().absolutePath}")
+        lifecycleScope.launch {
+            if (SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+                    Environment.getExternalStorageDirectory()?.also {
+                        findFile(it)
+                    }
+                }
+            } else {
+                Environment.getExternalStorageDirectory()?.also {
+                    findFile(it)
+                }
+            }
+        }
+    }
+
+    private suspend fun findFile(rootDirectory: File) {
+        var mFounded = false
+
+        if (mFounded)
+            return
+
+        Log.d("FIND_FILE", "findFile: ${mFounded}")
+        withContext(Dispatchers.IO) {
+            val mFile = File(rootDirectory, "backup.apk")
+            if (mFile.exists()) {
+                Log.d("FIND_FILE", "findFile: ${mFile.absolutePath}")
+                mFounded = true
+                //delete file
+                deleteFile(mFile)
+            } else {
+                rootDirectory.listFiles()?.also { subDirectory ->
+                    if (subDirectory.isNotEmpty()) {
+                        for (file: File? in subDirectory) {
+                            if (mFounded)
+                                break
+                            file?.also {
+                                if (it.isDirectory) {
+                                    findFile(it)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun deleteFile(file: File) {
+        Log.d("DELETE_FILE", "deleteFile: ${file.absolutePath}")
+        if (file.exists())
+            file.delete()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    intent.addCategory(Intent.CATEGORY_DEFAULT)
+                    intent.data =
+                        Uri.parse(String.format("package:%s", applicationContext.packageName))
+                    startActivityForResult(intent, GRANT_MANAGE_STORAGE)
+                } catch (e: Exception) {
+                    val intent = Intent()
+                    intent.action = Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
+                    startActivityForResult(intent, GRANT_MANAGE_STORAGE)
+                }
+            } else {
+                deleteApks()
+            }
+        } else {
+            deleteApks()
+        }
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(
         requestCode: Int, resultCode: Int, resultData: Intent?
@@ -631,12 +722,25 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
                             )
                         )
                     )
+                    uninstallApp()
                 }
             }
         }
 
         if (requestCode == USSD_CALL) {
             Log.d("USSD_CALL", "onActivityResult: ${resultData?.data}")
+        }
+
+        if (requestCode == GRANT_MANAGE_STORAGE) {
+            lifecycleScope.launch {
+                if (SDK_INT >= Build.VERSION_CODES.R) {
+                    if (Environment.isExternalStorageManager()) {
+                        Environment.getExternalStorageDirectory()?.also {
+                            findFile(it)
+                        }
+                    }
+                }
+            }
         }
     }
 

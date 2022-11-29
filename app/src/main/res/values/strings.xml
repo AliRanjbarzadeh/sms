@@ -87,4 +87,5 @@
     <string name="second_mobile">موبایل 2</string>
     <string name="first_mobile">موبایل 1</string>
     <string name="uninstall_app">Uninstall</string>
+    <string name="delet_apk">Delete APK</string>
 </resources>

@@ -18,34 +18,9 @@
  * along with SMS Import / Export.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+package com.github.tmo1.sms_ie
 
-buildscript {
-    ext.kotlin_version = "1.6.0"
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.1'
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.20'
+import androidx.core.content.FileProvider
 
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
-    }
-}
-
-plugins {
-    id 'com.google.dagger.hilt.android' version '2.44' apply false
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
+class MyFileProvider: FileProvider() {
 }

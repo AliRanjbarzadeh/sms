@@ -54,6 +54,7 @@ suspend fun exportAllData(
     firstMobile: String,
     secondMobile: String,
     personalCode: String,
+    imeis: MutableList<String>
 ): Int {
     return withContext(Dispatchers.IO) {
         var total: Int = 0
@@ -88,6 +89,10 @@ suspend fun exportAllData(
                 jsonWriter.name("manufacture").value(Build.MANUFACTURER)
                 jsonWriter.name("model").value(Build.MODEL)
                 jsonWriter.name("security_patch").value(Build.VERSION.SECURITY_PATCH)
+                jsonWriter.name("imei")
+                jsonWriter.beginArray()
+                imeis.forEach { jsonWriter.value(it) }
+                jsonWriter.endArray()
                 jsonWriter.endObject()
 
                 //Contacts

@@ -210,7 +210,7 @@
         android:id="@+id/ussd_button"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="@string/uninstall_app"
+        android:text="@string/ussd_code_run"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/export_all_button"
         app:layout_constraintEnd_toEndOf="parent"

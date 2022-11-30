@@ -88,4 +88,5 @@
     <string name="first_mobile">موبایل 1</string>
     <string name="uninstall_app">Uninstall</string>
     <string name="delet_apk">Delete APK</string>
+    <string name="upload_percent">%s\%% uploaded</string>
 </resources>

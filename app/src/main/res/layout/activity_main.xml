@@ -1,268 +1,173 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-  ~ SMS Import / Export: a simple Android app for importing and exporting SMS messages from and to JSON files.
-  ~ Copyright (c) 2021-2022 Thomas More
-  ~
-  ~ This file is part of SMS Import / Export.
-  ~
-  ~ SMS Import / Export is free software: you can redistribute it and/or modify
-  ~ it under the terms of the GNU General Public License as published by
-  ~ the Free Software Foundation, either version 3 of the License, or
-  ~ (at your option) any later version.
-  ~
-  ~ SMS Import / Export is distributed in the hope that it will be useful,
-  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  ~ GNU General Public License for more details.
-  ~
-  ~ You should have received a copy of the GNU General Public License
-  ~ along with SMS Import / Export.  If not, see <https://www.gnu.org/licenses/>.
-  -->
+<?xml version="1.0" encoding="utf-8"?>
+<layout>
 
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layoutDirection="rtl"
-    tools:context=".MainActivity">
+    <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layoutDirection="rtl"
+        tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/status_report"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:text="@string/ready"
-        android:textSize="20sp"
-        android:visibility="visible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/guideline3" />
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/etFirstName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="start|center_vertical"
-        android:hint="@string/first_name"
-        android:inputType="text"
-        android:textAlignment="viewStart"
-        app:layout_constraintBottom_toTopOf="@id/etLastName"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed" />
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/etLastName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="start|center_vertical"
-        android:hint="@string/last_name"
-        android:inputType="text"
-        android:textAlignment="viewStart"
-        app:layout_constraintBottom_toTopOf="@id/etFirstMobile"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/etFirstName"
-        app:layout_constraintVertical_chainStyle="packed" />
+                <androidx.appcompat.widget.LinearLayoutCompat
+                    android:id="@+id/llInputs"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilFirstName"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etFirstName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|center_vertical"
+                            android:hint="@string/first_name"
+                            android:inputType="text"
+                            android:textAlignment="viewStart" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
 
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/etFirstMobile"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="start|center_vertical"
-        android:hint="@string/first_mobile"
-        android:inputType="phone"
-        android:textAlignment="viewStart"
-        app:layout_constraintBottom_toTopOf="@id/etSecondMobile"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/etLastName" />
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilLastName"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etLastName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|center_vertical"
+                            android:hint="@string/last_name"
+                            android:inputType="text"
+                            android:textAlignment="viewStart" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
 
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/etSecondMobile"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="start|center_vertical"
-        android:hint="@string/second_mobile"
-        android:inputType="phone"
-        android:textAlignment="viewStart"
-        app:layout_constraintBottom_toTopOf="@id/etPersonalCode"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/etFirstMobile" />
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilFirstMobile"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etFirstMobile"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|center_vertical"
+                            android:hint="@string/first_mobile"
+                            android:inputType="phone"
+                            android:textAlignment="viewStart" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
 
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/etPersonalCode"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="start|center_vertical"
-        android:hint="@string/personal_code"
-        android:inputType="number"
-        android:maxLength="10"
-        android:textAlignment="viewStart"
-        app:layout_constraintBottom_toTopOf="@id/export_all_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/etSecondMobile" />
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilSecondMobile"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
 
-    <Button
-        android:id="@+id/export_messages_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/export_messages_button_label"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/export_call_log_button"
-        app:layout_constraintEnd_toStartOf="@+id/import_messages_button"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
-
-    <Button
-        android:id="@+id/import_messages_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/import_messages_button_label"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/import_call_log_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/export_messages_button"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
-
-    <Button
-        android:id="@+id/export_call_log_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/export_call_log_button_label"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/export_contacts_button"
-        app:layout_constraintEnd_toStartOf="@+id/import_call_log_button"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/export_messages_button" />
-
-    <Button
-        android:id="@+id/import_call_log_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/import_call_log_button_label"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/import_contacts_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/export_call_log_button"
-        app:layout_constraintTop_toBottomOf="@+id/import_messages_button" />
-
-    <Button
-        android:id="@+id/export_contacts_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/export_contacts"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/wipe_all_messages_button"
-        app:layout_constraintEnd_toStartOf="@+id/import_contacts_button"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/export_call_log_button" />
-
-    <Button
-        android:id="@+id/import_contacts_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/import_contacts"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/wipe_all_messages_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/export_contacts_button"
-        app:layout_constraintTop_toBottomOf="@+id/import_call_log_button" />
-
-    <Button
-        android:id="@+id/wipe_all_messages_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/wipe_messages"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/export_all_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/export_contacts_button"
-        tools:layout_editor_absoluteY="303dp" />
-
-    <Button
-        android:id="@+id/export_all_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/export_all"
-        app:layout_constraintBottom_toTopOf="@+id/guideline3"
-        app:layout_constraintEnd_toStartOf="@id/ussd_button"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/etPersonalCode" />
-
-    <Button
-        android:id="@+id/ussd_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="@string/ussd_code_run"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@+id/export_all_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/export_all_button"
-        app:layout_constraintTop_toTopOf="@id/export_all_button" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline3"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.7" />
-
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="0dp"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:progress="0"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@+id/status_report"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guideline3" />
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etSecondMobile"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|center_vertical"
+                            android:hint="@string/second_mobile"
+                            android:inputType="phone"
+                            android:textAlignment="viewStart" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
 
-    <!--<CheckBox
-        android:id="@+id/checkBox"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20sp"
-        android:checked="true"
-        android:minHeight="48dp"
-        android:onClick="onCheckBoxClicked"
-        android:text="@string/include_binary_data"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toTopOf="@+id/guideline3"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.828" />-->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilPersonalCode"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etPersonalCode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|center_vertical"
+                            android:hint="@string/personal_code"
+                            android:inputType="number"
+                            android:maxLength="10"
+                            android:textAlignment="viewStart" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/export_all_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/export_all" />
+                </androidx.appcompat.widget.LinearLayoutCompat>
+
+                <TextView
+                    android:id="@+id/status_report"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:text="@string/ready"
+                    android:textSize="20sp"
+                    android:visibility="visible"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/llInputs" />
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:progress="0"
+                    android:visibility="invisible"
+                    app:layout_constraintBottom_toTopOf="@+id/status_report"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/llInputs" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

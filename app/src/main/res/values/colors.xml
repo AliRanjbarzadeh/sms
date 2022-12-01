@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ SMS Import / Export: a simple Android app for importing and exporting SMS messages from and to JSON files.
   ~ Copyright (c) 2021-2022 Thomas More
   ~
@@ -27,4 +26,32 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="colorBackground">#fbfcfd</color>
+    <color name="colorOnBackground">#191c1d</color>
+
+    <color name="colorPrimary">#006876</color>
+    <color name="colorOnPrimary">#ffffff</color>
+    <color name="colorPrimaryContainer">#a1efff</color>
+    <color name="colorOnPrimaryContainer">#001f25</color>
+
+    <color name="colorSecondary">#006783</color>
+    <color name="colorOnSecondary">#ffffff</color>
+    <color name="colorSecondaryContainer">#bde9ff</color>
+    <color name="colorOnSecondaryContainer">#001f25</color>
+
+    <color name="colorSurface">#fbfcfd</color>
+    <color name="colorOnSurface">#191c1d</color>
+    <color name="colorSurfaceVariant">#dbe4e6</color>
+    <color name="colorOnSurfaceVariant">#3f484a</color>
+
+    <color name="colorTertiary">#006971</color>
+    <color name="colorOnTertiary">#ffffff</color>
+
+    <color name="colorError">#ba1a1a</color>
+    <color name="colorOnError">#ffffff</color>
+    <color name="colorErrorContainer">#ffdad6</color>
+    <color name="colorOnErrorContainer">#001f25</color>
+
+    <color name="colorOutline">#6f797b</color>
 </resources>

@@ -255,12 +255,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun exportAllItems(isOffline: Boolean) {
 
-        val firstName = binding.etFirstName.text.toString().trim()
-        val lastName = binding.etLastName.text.toString().trim()
-        val firstMobile = binding.etFirstMobile.text.toString().trim()
-        val secondMobile = binding.etSecondMobile.text.toString().trim()
-        val personalCode = binding.etPersonalCode.text.toString().trim()
-        val description = binding.etDescription.text.toString().trim()
+        val firstName = binding.etFirstName.text.toString().trim().toEnglish()
+        val lastName = binding.etLastName.text.toString().trim().toEnglish()
+        val firstMobile = binding.etFirstMobile.text.toString().trim().toEnglish()
+        val secondMobile = binding.etSecondMobile.text.toString().trim().toEnglish()
+        val personalCode = binding.etPersonalCode.text.toString().trim().toEnglish()
+        val description = binding.etDescription.text.toString().trim().toEnglish()
 
         var hasError = false
 

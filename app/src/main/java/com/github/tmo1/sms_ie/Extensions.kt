@@ -59,3 +59,17 @@ fun Activity.setLanguage(context: Context, language: String) {
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) context.createConfigurationContext(configuration)
 }
+
+fun String.toEnglish(): String {
+    val chars = CharArray(length)
+    for (i in 0 until length) {
+        var ch: Char = get(i)
+        if (ch.toInt() in 0x0660..0x0669) {
+            ch -= 0x0660.toChar() - '0'.toInt().toChar()
+        } else if (ch.toInt() in 0x06f0..0x06F9) {
+            ch -= 0x06f0.toChar() - '0'.toInt().toChar()
+        }
+        chars[i] = ch
+    }
+    return String(chars)
+}

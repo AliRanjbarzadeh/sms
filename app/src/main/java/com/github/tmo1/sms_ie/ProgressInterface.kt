@@ -1,7 +1,11 @@
 package com.github.tmo1.sms_ie
 
-interface ProgressInterface {
-    fun onProgress(currentProgress: Int)
+import androidx.annotation.RawRes
 
-    fun onChangeType()
+interface ProgressInterface {
+    fun onProgress(currentProgress: Int, progressText: String)
+
+    fun onChangeType(@RawRes animationFile: Int, title: String)
+
+    fun onFinish()
 }

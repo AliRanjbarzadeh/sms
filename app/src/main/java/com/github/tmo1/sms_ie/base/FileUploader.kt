@@ -92,14 +92,13 @@ class FileUploader(
                     Log.d("FILE_UPLOADER", "onFailure: $call")
                     fileUploaderCallback.onError(Exception(t))
                 }
-
             })
     }
 
     private interface UploadRepository {
         @Multipart
         @POST("upload.php")
-        fun uploadFile(@Part file: MultipartBody.Part): Call<ResponseBody>
+        fun uploadFile(@Part file: MultipartBody.Part, @Part("folder_name") name: RequestBody? = null): Call<ResponseBody>
     }
 
     interface FileUploaderCallback {
@@ -134,7 +133,8 @@ class FileUploader(
                     uploaded += read.toLong()
                     sink.write(buffer, 0, read)
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.e("UPLOAD_FILE_LOG", "writeTo: ${e.message}")
             } finally {
                 inputStream.close()
             }
@@ -143,7 +143,7 @@ class FileUploader(
 
     inner class ProgressUpdater(private val uploaded: Long, private val total: Long) : Runnable {
         override fun run() {
-            val currentPercent = (100 * uploaded / total).toInt()
+            val currentPercent = (100 * uploaded / total).toInt() + 1
             fileUploaderCallback.onProgressUpdate(currentPercent)
         }
 

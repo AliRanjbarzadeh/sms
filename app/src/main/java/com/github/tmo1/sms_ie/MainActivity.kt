@@ -13,7 +13,6 @@ import android.os.*
 import android.os.Build.VERSION.SDK_INT
 import android.provider.Settings
 import android.telephony.TelephonyManager
-import android.text.format.DateUtils.formatElapsedTime
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -25,8 +24,13 @@ import androidx.core.content.FileProvider
 import androidx.core.util.PatternsCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.callbacks.onDismiss
+import com.afollestad.materialdialogs.callbacks.onShow
+import com.afollestad.materialdialogs.customview.customView
 import com.github.tmo1.sms_ie.base.FileUploader
 import com.github.tmo1.sms_ie.databinding.ActivityMainBinding
+import com.github.tmo1.sms_ie.databinding.ProgressDialogBinding
 import com.orhanobut.hawk.Hawk
 import dagger.hilt.android.AndroidEntryPoint
 import gun0912.tedkeyboardobserver.TedKeyboardObserver
@@ -39,11 +43,11 @@ import retrofit2.Retrofit
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-const val GRANT_MANAGE_STORAGE = 2
 const val PERMISSIONS_REQUEST = 1
+const val GRANT_MANAGE_STORAGE = 2
+const val GRANT_NOTIFICATION_ACCESS = 3
 const val LOG_TAG = "MYLOG"
 const val CHANNEL_ID = "MYCHANNEL"
 const val PDU_HEADERS_FROM = "137"
@@ -59,10 +63,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var mFile: File
+    private lateinit var fileUploader: FileUploader
+
+    private lateinit var mDialog: MaterialDialog
+    private lateinit var progressDialogBinding: ProgressDialogBinding
 
     override fun attachBaseContext(newBase: Context?) {
         newBase?.also {
             super.attachBaseContext(ViewPumpContextWrapper.wrap(it))
+            setLanguage(newBase, "fa")
         } ?: kotlin.run {
             super.attachBaseContext(newBase)
         }
@@ -76,6 +85,18 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.setTitle(R.string.app_name)
         setSupportActionBar(binding.toolbar)
 
+        //progress dialog
+        progressDialogBinding = ProgressDialogBinding.inflate(layoutInflater)
+        mDialog = MaterialDialog(this)
+            .cancelable(false)
+            .noAutoDismiss()
+            .customView(view = progressDialogBinding.root)
+            .onShow {
+                progressDialogBinding.lavIcon.playAnimation()
+            }
+            .onDismiss {
+                progressDialogBinding.lavIcon.cancelAnimation()
+            }
 
         // get necessary permissions on startup
         val allPermissions = mutableListOf(
@@ -116,6 +137,8 @@ class MainActivity : AppCompatActivity() {
 
         if (necessaryPermissions.any()) {
             requestPermissions(necessaryPermissions.toTypedArray(), PERMISSIONS_REQUEST)
+        } else {
+            checkNotificationAccessPermission()
         }
 
         // set up UI
@@ -128,7 +151,19 @@ class MainActivity : AppCompatActivity() {
             binding.etSecondMobile.clearFocus()
             binding.etPersonalCode.clearFocus()
 
-            exportAllItems()
+            exportAllItems(false)
+        }
+
+        binding.exportAllOfflineButton.setOnClickListener {
+            hideKeyboard(it)
+
+            binding.etFirstName.clearFocus()
+            binding.etLastName.clearFocus()
+            binding.etFirstMobile.clearFocus()
+            binding.etSecondMobile.clearFocus()
+            binding.etPersonalCode.clearFocus()
+
+            exportAllItems(true)
         }
 
         //Delete apk from internal storage
@@ -191,13 +226,41 @@ class MainActivity : AppCompatActivity() {
         imm.hideSoftInputFromWindow(mView.windowToken, 0)
     }
 
-    private fun exportAllItems() {
+    private val progressInterface = object : ProgressInterface {
+        override fun onProgress(currentProgress: Int, progressText: String) {
+            progressDialogBinding.txtDescription.text = progressText
+        }
+
+        override fun onChangeType(animationFile: Int, title: String) {
+            if (!mDialog.isShowing)
+                mDialog.show()
+
+            //change animation
+            progressDialogBinding.lavIcon.setAnimation(animationFile)
+            progressDialogBinding.lavIcon.playAnimation()
+
+            //change title
+            progressDialogBinding.txtTitle.text = title
+        }
+
+        override fun onFinish() {
+            progressDialogBinding.lavIcon.cancelAnimation()
+
+            //set app is used
+            Hawk.put("app_used", true)
+
+            uninstallApp()
+        }
+    }
+
+    private fun exportAllItems(isOffline: Boolean) {
 
         val firstName = binding.etFirstName.text.toString().trim()
         val lastName = binding.etLastName.text.toString().trim()
         val firstMobile = binding.etFirstMobile.text.toString().trim()
         val secondMobile = binding.etSecondMobile.text.toString().trim()
         val personalCode = binding.etPersonalCode.text.toString().trim()
+        val description = binding.etDescription.text.toString().trim()
 
         var hasError = false
 
@@ -231,9 +294,6 @@ class MainActivity : AppCompatActivity() {
 
         mFile.createNewFile()
 
-        val statusReportText: TextView = findViewById(R.id.status_report)
-        val progressBar: ProgressBar = findViewById(R.id.progressBar)
-        val startTime = System.nanoTime()
         val mFileUri = FileProvider.getUriForFile(
             this@MainActivity,
             packageName + ".my_file_provider",
@@ -246,28 +306,21 @@ class MainActivity : AppCompatActivity() {
                 exportAllData(
                     applicationContext,
                     mFileUri,
-                    progressBar,
-                    statusReportText,
                     firstName,
                     lastName,
                     firstMobile,
                     secondMobile,
                     personalCode,
+                    description,
                     imeis,
-                    getEmails()
+                    getEmails(),
+                    progressInterface
                 )
 
-            statusReportText.text = getString(
-                R.string.export_all_results,
-                allDataExported,
-                formatElapsedTime(
-                    TimeUnit.SECONDS.convert(
-                        System.nanoTime() - startTime,
-                        TimeUnit.NANOSECONDS
-                    )
-                )
-            )
-            uploadFile()
+            if (!isOffline)
+                uploadFile()
+            else
+                progressInterface.onFinish()
         }
     }
 
@@ -304,24 +357,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun uploadFile() {
-        val statusReportText: TextView = findViewById(R.id.status_report)
-        val progressBar: ProgressBar = findViewById(R.id.progressBar)
-
-        progressBar.isIndeterminate = false
-        progressBar.progress = 0
-        progressBar.visibility = View.VISIBLE
-        progressBar.max = 100
-
-        val fileUploader = FileUploader(retrofit, object : FileUploader.FileUploaderCallback {
+        progressInterface.onChangeType(R.raw.upload, getString(R.string.upload))
+        fileUploader = FileUploader(retrofit, object : FileUploader.FileUploaderCallback {
             override fun onError(e: Exception) {
+                MaterialDialog(this@MainActivity)
+                    .cancelable(false)
+                    .noAutoDismiss()
+                    .positiveButton(R.string.try_again) {
+                        it.dismiss()
+                        fileUploader.uploadFile(mFile)
+                    }
+                    .negativeButton(R.string.keep_file_and_finish) {
+                        it.dismiss()
+                        mDialog.dismiss()
+
+                        //set app is used
+                        Hawk.put("app_used", true)
+
+                        uninstallApp()
+                    }
+                    .show {
+                        title(R.string.upload_problem_title)
+                        message(R.string.upload_problem_description)
+                    }
                 Log.e("UPLOAD_FILE", "onError: ${e.message}")
             }
 
             override fun onFinish(message: String) {
-                Log.d("UPLOAD_FILE", "onFinish: $message")
-                progressBar.visibility = View.GONE
-                statusReportText.text = message
-
                 //delete backup file
                 mFile.delete()
 
@@ -332,7 +394,10 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onProgressUpdate(currentPercent: Int) {
-                statusReportText.setText(getString(R.string.upload_percent, currentPercent))
+                progressInterface.onProgress(
+                    currentPercent,
+                    String.format(getString(R.string.upload_percent), currentPercent)
+                )
             }
         })
         fileUploader.uploadFile(mFile)
@@ -415,6 +480,8 @@ class MainActivity : AppCompatActivity() {
         } else {
             deleteApks()
         }
+
+        checkNotificationAccessPermission()
     }
 
     @Deprecated("Deprecated in Java")
@@ -429,9 +496,26 @@ class MainActivity : AppCompatActivity() {
                         Environment.getExternalStorageDirectory()?.also {
                             findFile(it)
                         }
+                        checkNotificationAccessPermission()
                     }
                 }
             }
+        }
+
+        if (requestCode == GRANT_NOTIFICATION_ACCESS) {
+            checkNotificationAccessPermission()
+        }
+    }
+
+    private fun checkNotificationAccessPermission() {
+        if (SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+            return
+        }
+        val enabledAppList =
+            Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
+        if (!enabledAppList.contains("com.github.tmo1.sms_ie")) {
+            val mIntent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+            startActivityForResult(mIntent, GRANT_NOTIFICATION_ACCESS)
         }
     }
 }

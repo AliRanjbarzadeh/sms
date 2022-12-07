@@ -14,9 +14,9 @@ class BaseHttpClient @Inject constructor(
 ) {
     val okHttpClient = OkHttpClient()
         .newBuilder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(5, TimeUnit.SECONDS)
+        .writeTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(5, TimeUnit.SECONDS)
         .addNetworkInterceptor(modifyHeadersInterceptor)
         .build()
 }

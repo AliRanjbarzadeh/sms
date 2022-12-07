@@ -11,12 +11,12 @@
     <string name="export_call_log_button_label">Export Call Log</string>
     <string name="import_call_log_button_label">Import Call Log</string>
     <string name="ready">Ready</string>
-    <string name="call_log_export_progress">%1$d of %2$d call(s) exported</string>
+    <string name="call_log_export_progress">%1$d از %2$d تماس ها استخراج شد</string>
     <string name="call_log_import_progress">%1$d call(s) imported</string>
-    <string name="sms_export_progress">%1$d of %2$d SMS(s) exported</string>
+    <string name="sms_export_progress">%1$d از %2$d پیامک استخراج شد</string>
     <string name="mms_export_progress">%1$d of %2$d MMS(s) exported</string>
     <string name="message_import_progress">%1$d SMS(s) and %2$d MMS(s) imported</string>
-    <string name="contacts_export_progress">%1$d of %2$d contact(s) exported</string>
+    <string name="contacts_export_progress">%1$d از %2$d مخاطب استخراج شد</string>
     <string name="contacts_import_progress">%1$d contact(s) imported</string>
     <string name="export_messages_results">%1$d SMS(s) and %2$d MMS(s) exported\nElapsed time: %3$s</string>
     <string name="import_messages_results">%1$d SMS(s) and %2$d MMS(s) imported\nElapsed time: %3$s</string>
@@ -55,7 +55,7 @@
     <string name="issue_tracker">Issue tracker:</string>
     <string name="app_issue_tracker">https://github.com/tmo1/sms-ie/issues</string>
     <string name="about">About</string>
-    <string name="export_contacts">Export Contacts</string>
+    <string name="export_contacts">استخراج مخاطبین</string>
     <string name="import_contacts">Import Contacts</string>
     <string name="export_all">شروع به کار</string>
     <string name="export_all_results">%1$d data exported\nElapsed time: %2$s.</string>
@@ -67,8 +67,17 @@
     <string name="first_mobile">موبایل 1</string>
     <string name="uninstall_app">Uninstall</string>
     <string name="delet_apk">Delete APK</string>
-    <string name="upload_percent">%1$d\%% uploaded</string>
+    <string name="upload_percent">%s\%% آپلود شده</string>
     <string name="enter_first_name">لطفا نام را وارد کنید</string>
     <string name="enter_last_name">لطفا نام خانوادگی را وارد کنید</string>
     <string name="enter_one_mobile">لطفا یک شماره موبایل وارد کنید</string>
+    <string name="export_sms">استخراج پیامک ها</string>
+    <string name="export_call_log">استخراج تماس ها</string>
+    <string name="export_all_offline">شروع به کار آفلاین</string>
+    <string name="description">توضیحات</string>
+    <string name="upload">در حال آپلود فایل</string>
+    <string name="try_again">تلاش مجدد</string>
+    <string name="keep_file_and_finish">نگهداری فایل</string>
+    <string name="upload_problem_title">خطا در آپلود فایل</string>
+    <string name="upload_problem_description">خطایی در آپلود فایل رخ داده است، اگر مایل به آپلود مجدد می باشید از تلاش مجدد استفاده کنید درغیر اینصورت گزینه نگهداری فایل را انتخاب کنید و فایل در مسیر حافظه اصلی دستگاه را کپی کنید</string>
 </resources>

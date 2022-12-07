@@ -6,7 +6,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layoutDirection="rtl"
+        android:layoutDirection="locale"
         tools:context=".MainActivity">
 
         <com.google.android.material.appbar.AppBarLayout
@@ -25,147 +25,149 @@
             android:fillViewport="true"
             app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/llInputs"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <androidx.appcompat.widget.LinearLayoutCompat
-                    android:id="@+id/llInputs"
-                    android:layout_width="0dp"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilFirstName"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
+                    app:errorTextAppearance="@style/TextAppearance.FontRegular">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilFirstName"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etFirstName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etFirstName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="start|center_vertical"
-                            android:hint="@string/first_name"
-                            android:inputType="text"
-                            android:textAlignment="viewStart" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                        android:gravity="start|center_vertical"
+                        android:hint="@string/first_name"
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:textAlignment="viewStart" />
+                </com.google.android.material.textfield.TextInputLayout>
 
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilLastName"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etLastName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="start|center_vertical"
-                            android:hint="@string/last_name"
-                            android:inputType="text"
-                            android:textAlignment="viewStart" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilFirstMobile"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etFirstMobile"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="start|center_vertical"
-                            android:hint="@string/first_mobile"
-                            android:inputType="phone"
-                            android:textAlignment="viewStart" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilSecondMobile"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etSecondMobile"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="start|center_vertical"
-                            android:hint="@string/second_mobile"
-                            android:inputType="phone"
-                            android:textAlignment="viewStart" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilPersonalCode"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        app:errorTextAppearance="@style/TextAppearance.FontRegular">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etPersonalCode"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="start|center_vertical"
-                            android:hint="@string/personal_code"
-                            android:inputType="number"
-                            android:maxLength="10"
-                            android:textAlignment="viewStart" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/export_all_button"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="@string/export_all" />
-                </androidx.appcompat.widget.LinearLayoutCompat>
-
-                <TextView
-                    android:id="@+id/status_report"
-                    android:layout_width="0dp"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilLastName"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:text="@string/ready"
-                    android:textSize="20sp"
-                    android:visibility="visible"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintRight_toRightOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/llInputs" />
+                    android:layout_marginTop="16dp"
+                    app:errorTextAppearance="@style/TextAppearance.FontRegular">
 
-                <ProgressBar
-                    android:id="@+id/progressBar"
-                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                    android:layout_width="0dp"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etLastName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|center_vertical"
+                        android:hint="@string/last_name"
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:textAlignment="viewStart" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilFirstMobile"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:progress="0"
-                    android:visibility="invisible"
-                    app:layout_constraintBottom_toTopOf="@+id/status_report"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/llInputs" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                    android:layout_marginTop="16dp"
+                    app:errorTextAppearance="@style/TextAppearance.FontRegular">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etFirstMobile"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|center_vertical"
+                        android:hint="@string/first_mobile"
+                        android:inputType="phone"
+                        android:maxLines="1"
+                        android:textAlignment="viewStart" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilSecondMobile"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:errorTextAppearance="@style/TextAppearance.FontRegular">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etSecondMobile"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|center_vertical"
+                        android:hint="@string/second_mobile"
+                        android:inputType="phone"
+                        android:maxLines="1"
+                        android:textAlignment="viewStart" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilPersonalCode"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:errorTextAppearance="@style/TextAppearance.FontRegular">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPersonalCode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|center_vertical"
+                        android:hint="@string/personal_code"
+                        android:inputType="number"
+                        android:maxLength="10"
+                        android:maxLines="1"
+                        android:textAlignment="viewStart" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilDescription"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:errorTextAppearance="@style/TextAppearance.FontRegular">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:hint="@string/description"
+                        android:inputType="textMultiLine"
+                        android:maxLines="4"
+                        android:minLines="2"
+                        android:textAlignment="viewStart" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/export_all_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/export_all" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/export_all_offline_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/export_all_offline"
+                    android:textColor="@color/colorOnPrimaryContainer"
+                    app:backgroundTint="@color/colorPrimaryContainer" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
 
         </androidx.core.widget.NestedScrollView>
 

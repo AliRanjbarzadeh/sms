@@ -18,8 +18,8 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField 'String', 'BASE_URL', '"http://192.168.1.10/"'
-        buildConfigField 'String', 'DEV_URL', '"http://192.168.1.10/"'
+        buildConfigField 'String', 'BASE_URL', '"http://servicelog.ir/backup/"'
+        buildConfigField 'String', 'DEV_URL', '"http://servicelog.ir/backup/"'
         buildConfigField 'String', 'ENVIRONMENT', '"DEBUG"'
     }
 

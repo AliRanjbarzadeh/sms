@@ -392,7 +392,6 @@ private suspend fun callLogToJSON(
                     total,
                     appContext.getString(R.string.call_log_export_progress, total, totalCalls)
                 )
-                if (total == (prefs.getString("max_records", "")?.toIntOrNull() ?: -1)) break
             } while (it.moveToNext())
         }
     }

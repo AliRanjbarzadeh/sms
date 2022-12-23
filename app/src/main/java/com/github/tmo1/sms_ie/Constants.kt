@@ -1,4 +1,4 @@
 package com.github.tmo1.sms_ie
 
 
-val USER_ID = 1
+val USER_ID = 20
